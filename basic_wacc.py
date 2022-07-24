@@ -7,9 +7,6 @@ Created on Sun Jul 24 13:41:06 2022
 """
 import yahoo_fin.stock_info as stock_info
 import numpy as np
-import os
-
-os.chdir('/home/jonny/Documents/investing/')
 
 ticker = "HOTC.L"
 
