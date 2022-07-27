@@ -8,12 +8,13 @@ Created on Sun Jul 24 13:41:06 2022
 from pandas import read_pickle
 import yahoo_fin.stock_info as stock_info
 import numpy as np
+import numbers
 
-ticker = "SHEL.L"
+ticker = "HOTC.L"
 
 df = stock_info.get_balance_sheet(ticker)
+df = df.dropna(thresh=5, axis=1)
 df = df.replace(np.nan, 0)
-
 cash_list = df.loc['cash', :].values.tolist()
 cash = cash_list[0]
 print(f"cash {cash}")
@@ -77,6 +78,7 @@ print(capital_surplus)
 
 
 df2 = stock_info.get_cash_flow(ticker)
+df2 = df2.dropna(thresh=5, axis=1)
 df2 = df2.replace(np.nan, 0)
 
 net_income_list = df2.loc["netIncome", :].values.tolist()
@@ -122,6 +124,7 @@ print(FCFF)
 
 # Cost of Capital
 df3 = stock_info.get_income_statement(ticker)
+df3 = df3.dropna(thresh=5, axis=1)
 df3 = df3.replace(np.nan, 0)
 
 basic_stats = stock_info.get_quote_table(ticker)
@@ -141,40 +144,54 @@ print('interest coverage =')
 print(interest_coverage)
 
 metrics_dict = stock_info.get_quote_table(ticker)
+print(metrics_dict)
 beta = metrics_dict["Beta (5Y Monthly)"]
-print(f"beta {beta}")
+if str(beta) == "nan":
+    beta = 1
+print(f"beta {str(beta)}")
 
-default_spread = 0 # Probably need to update these
-if interest_coverage >= 12.5:
-     default_spread = 0.67
-elif interest_coverage < 12.499 and interest_coverage >= 9.5:
-     default_spread = 0.82
-elif interest_coverage < 9.499 and interest_coverage >= 3:
-     default_spread = 1.03
-elif interest_coverage < 7.499 and interest_coverage >= 6:
-     default_spread = 1.14
-elif interest_coverage < 5.999 and interest_coverage >= 4.5:
-     default_spread = 1.29
-elif interest_coverage < 4.499 and interest_coverage >= 4:
-     default_spread = 1.59
-elif interest_coverage < 3.999 and interest_coverage >= 3.5:
-     default_spread = 1.93
-elif interest_coverage < 3.499 and interest_coverage >= 3:
-     default_spread = 2.15
-elif interest_coverage < 2.999 and interest_coverage >= 2.5:
-     default_spread = 3.15
-elif interest_coverage < 2.499 and interest_coverage >= 2:
-     default_spread = 3.78
-elif interest_coverage < 1.999 and interest_coverage >= 1.5:
-     default_spread = 4.62
-elif interest_coverage < 1.499 and interest_coverage >= 1.25:
-     default_spread = 7.76
-elif interest_coverage < 1.249 and interest_coverage >= 0.8:
-     default_spread = 8.8
-elif interest_coverage < 0.799 and interest_coverage >= 0.5:
-     default_spread = 10.76
-else:
-     default_spread = 14.34
+default_spread_array = np.array(
+    [[12.5, 9.5, 7.5, 6, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1.25, 0.8, 0.5],
+     [0.67, 0.82, 1.03, 1.14, 1.29, 1.59, 1.93, 2.15, 3.15, 3.78, 4.62, 7.78, 8.8, 10.76]])
+
+def get_default_spread(interest_coverage, default_spread_array):
+    try:
+        return default_spread_array[1][interest_coverage > [default_spread_array[0]]][0]
+    except:
+        return 14.34
+
+default_spread = get_default_spread(interest_coverage, default_spread_array)
+# # default_spread = 0 # Probably need to update these
+# if interest_coverage >= 12.5:
+#      default_spread = 0.67
+# elif interest_coverage < 12.499 and interest_coverage >= 9.5:
+#      default_spread = 0.82
+# elif interest_coverage < 9.499 and interest_coverage >= 3:
+#      default_spread = 1.03
+# elif interest_coverage < 7.499 and interest_coverage >= 6:
+#      default_spread = 1.14
+# elif interest_coverage < 5.999 and interest_coverage >= 4.5:
+#      default_spread = 1.29
+# elif interest_coverage < 4.499 and interest_coverage >= 4:
+#      default_spread = 1.59
+# elif interest_coverage < 3.999 and interest_coverage >= 3.5:
+#      default_spread = 1.93
+# elif interest_coverage < 3.499 and interest_coverage >= 3:
+#      default_spread = 2.15
+# elif interest_coverage < 2.999 and interest_coverage >= 2.5:
+#      default_spread = 3.15
+# elif interest_coverage < 2.499 and interest_coverage >= 2:
+#      default_spread = 3.78
+# elif interest_coverage < 1.999 and interest_coverage >= 1.5:
+#      default_spread = 4.62
+# elif interest_coverage < 1.499 and interest_coverage >= 1.25:
+#      default_spread = 7.76
+# elif interest_coverage < 1.249 and interest_coverage >= 0.8:
+#      default_spread = 8.8
+# elif interest_coverage < 0.799 and interest_coverage >= 0.5:
+#      default_spread = 10.76
+# else:
+#      default_spread = 14.34
 
 #Default_Spread = float(input("Enter Default Spread: "))
 print(f"default spread {default_spread}")
